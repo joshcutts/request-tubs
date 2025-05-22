@@ -217,6 +217,11 @@ router.all('/receive/:id', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/api/health/', (_req: Request, res: Response): void => {
+  res.sendStatus(200);
+});
+
+
 router.get('/health/db', async (_req: Request, res: Response) => {
   try {
     const mongoPing = await (await db).command({ ping: 1 });
