@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import express, { Request, Response } from "express";
 import pool from './database/sql.js';
 import { QueryResult } from 'pg';
 import { db } from './database/mongo.js';
@@ -7,7 +7,6 @@ import { ObjectId } from 'mongodb';
 import { FrontFacingTub, SQLTubRequest, FrontFacingTubRequest, DeletedRequestRow } from "./types.js";
 import { DeleteResult } from 'mongodb';
 
-const express = require('express');
 const router = express.Router();
 
 // Set up hashing
@@ -96,7 +95,7 @@ router.get('/api/tubs/:id/requests', async (req: Request, res: Response) => {
 
 
 // Delete a request by request_id
-router.delete('/api/requests/:request_id', async (req: Request, res: Response): Promise<Response> => {
+router.delete('/api/requests/:request_id', async (req: Request, res: Response): Promise<void> => {
   try {
     const request_id: string = req.params.request_id;
 
@@ -105,36 +104,41 @@ router.delete('/api/requests/:request_id', async (req: Request, res: Response): 
     const result = await pool.query<DeletedRequestRow>(`DELETE FROM requests WHERE id=$1 RETURNING body_id`, [request_id]);
     if (!result.rowCount || result.rowCount < 1) {
       console.log('No matching request found. Nothing deleted.');
-      return res.status(404).json({ error: 'Request not found' });
+      res.status(404).json({ error: 'Request not found' });
+      return;
     }
 
     // Delete body from Mongo
     const body_id = result.rows[0].body_id;
     if (!ObjectId.isValid(body_id)) {
       console.warn(`Invalid ObjectId: ${body_id}`);
-      return res.status(400).json({ error: 'Invalid body_id' });
+      res.status(400).json({ error: 'Invalid body_id' });
+      return;
     }
     const collection = (await db).collection('bodies');
     const result2: DeleteResult = await collection.deleteOne({ _id: new ObjectId(body_id) });
     if (result2.deletedCount < 1) {
       console.log('No matching body found. Nothing deleted.');
-      return res.status(404).json({ error: 'Body not found' });
+      res.status(404).json({ error: 'Body not found' });
+      return;
     }
 
     // Success from Mongo and SQL!
     console.log('Delete successful!');
-    return res.sendStatus(204); // No Content
+    res.sendStatus(204); // No Content
+    return;
     
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "Unexpected error, maybe db connection issue" });
+    res.status(500).json({ error: "Unexpected error, maybe db connection issue" });
+    return;
   }
 });
 
 // Delete a tub
 router.delete('/api/tubs/:id', async (req: Request, res: Response): Promise<void> => {
   const tubId = req.params.id;
-  const internalTubId = decodeEncodedId(tubId)
+  const internalTubId = decodeEncodedId(tubId);
 
   try {
     const resultTubs = await pool.query(`DELETE FROM tubs WHERE id=$1`, [internalTubId]);
@@ -144,11 +148,11 @@ router.delete('/api/tubs/:id', async (req: Request, res: Response): Promise<void
       return;
     }
 
-    console.log("Successful deletion")
-    res.sendStatus(204)
+    console.log("Successful deletion");
+    res.sendStatus(204);
   } catch (error) {
     console.error("Error deleting tub:", error);
-    res.status(500).json({ error: "Error deleting tub from db." })
+    res.status(500).json({ error: "Error deleting tub from db." });
   }
 });
 
