@@ -8,8 +8,8 @@ import {
 } from '@aws-sdk/client-ssm';
 import type { Config } from '../types';
 
-const secretsClient = new SecretsManagerClient({});
-const ssmClient = new SSMClient({});
+const secretsClient = new SecretsManagerClient({ region: 'us-west-2' });
+const ssmClient = new SSMClient({ region: 'us-west-2' });
 
 export async function loadConfig(): Promise<Config> {
   // Load secrets

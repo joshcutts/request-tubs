@@ -9,8 +9,8 @@ import {
   GetParametersByPathCommand,
 } from '@aws-sdk/client-ssm';
 
-const secretsClient = new SecretsManagerClient({});
-const ssmClient = new SSMClient({});
+const secretsClient = new SecretsManagerClient({ region: 'us-west-2' });
+const ssmClient = new SSMClient({ region: 'us-west-2' });
 const caFilePath = path.resolve('/home/ssm-user/global-bundle.pem');
 
 let cachedDb: Promise<Db> | null = null;
